@@ -1,7 +1,3 @@
--- client_load_data.psql
--- Run this with psql, not pgAdmin, so the CSV files are loaded by the client.
--- Example:
---   psql -h localhost -U your_user -d your_database -f "C:/Users/frict/Desktop/New folder/client_load_data.psql"
 
 \set ON_ERROR_STOP on
 
@@ -237,10 +233,7 @@ CREATE TABLE staging.stg_tackles (
 \copy staging.stg_tackles ("tackleid", "playid", "teamid", "playerid", "tackleposition", "tackletype", "tackleydsscrim", "tackleend", "tacklenull")
 FROM 'C:/Users/frict/Desktop/New folder/Data/tackles.csv' WITH CSV HEADER NULL '' QUOTE '"' ESCAPE '"';
 
--- Helper pattern used below:
--- NULLIF(col,'') avoids casting empty strings.
 
--- 1) Seasons: one row per season year from games.csv.
 INSERT INTO seasons (season_id, season_year, season_type, start_date, end_date)
 SELECT
     season::int AS season_id,
@@ -252,9 +245,8 @@ FROM staging.stg_games
 WHERE NULLIF(season, '') IS NOT NULL
 GROUP BY season::int;
 
--- 2) Teams: the real dataset mainly stores numeric team IDs. We create stable labels from those IDs.
 INSERT INTO teams (team_id, team_name, team_abbr, conference, division, founded_year)
-SELECT DISTINCT team_id, 'Team ' || team_id, 'T' || team_id, NULL, NULL, NULL
+SELECT DISTINCT team_id, 'Team ' || team_id, 'T' || team_id, NULL::text, NULL::text, NULL::integer
 FROM (
     SELECT NULLIF(hometeamid, '')::int AS team_id FROM staging.stg_games WHERE NULLIF(hometeamid, '') IS NOT NULL
     UNION
@@ -278,16 +270,14 @@ FROM (
 ) t
 WHERE team_id IS NOT NULL;
 
--- 3) Stadiums: games.csv provides siteId, so each siteId is treated as a stadium/location record.
 INSERT INTO stadiums (stadium_id, stadium_name, city, state, capacity, surface_type)
 SELECT DISTINCT
     NULLIF(siteid, '')::int AS stadium_id,
     'Site ' || NULLIF(siteid, '') AS stadium_name,
-    NULL, NULL, NULL, NULL
+    NULL::text, NULL::text, NULL::integer, NULL::text
 FROM staging.stg_games
 WHERE NULLIF(siteid, '') IS NOT NULL;
 
--- 4) Games.
 INSERT INTO games (game_id, season_id, game_date, week_number, home_team_id, away_team_id, stadium_id, home_score, away_score, overtime_flag)
 SELECT
     gameid::int,
@@ -307,7 +297,6 @@ WHERE NULLIF(gameid, '') IS NOT NULL
   AND NULLIF(hometeamid, '') IS NOT NULL
   AND NULLIF(visitorteamid, '') IS NOT NULL;
 
--- 5) Players: load real player profiles and infer a team from gameParticipation when available.
 WITH latest_team AS (
     SELECT DISTINCT ON (NULLIF(playerid, '')::int)
         NULLIF(playerid, '')::int AS player_id,
@@ -323,7 +312,7 @@ SELECT
     COALESCE(NULLIF(p.namefirst, ''), 'Unknown'),
     COALESCE(NULLIF(p.namelast, ''), 'Player'),
     NULLIF(p.position, ''),
-    NULL,
+    NULL::integer,
     NULLIF(p.dob, '')::date,
     NULLIF(p.college, '')
 FROM staging.stg_players p
@@ -331,9 +320,8 @@ LEFT JOIN latest_team lt ON lt.player_id = p.playerid::int
 WHERE NULLIF(p.playerid, '') IS NOT NULL
 ON CONFLICT (player_id) DO NOTHING;
 
--- Add any referenced players missing from players.csv so foreign keys do not fail.
 INSERT INTO players (player_id, team_id, first_name, last_name, position, jersey_num, birth_date, college)
-SELECT DISTINCT player_id, team_id, 'Unknown', 'Player', NULL, NULL, NULL, NULL
+SELECT DISTINCT player_id, team_id, 'Unknown', 'Player', NULL::text, NULL::integer, NULL::date, NULL::text
 FROM (
     SELECT NULLIF(playerid, '')::int AS player_id, NULLIF(teamid, '')::int AS team_id FROM staging.stg_gameparticipation WHERE NULLIF(playerid, '') IS NOT NULL
     UNION
@@ -350,7 +338,6 @@ FROM (
 WHERE player_id IS NOT NULL
 ON CONFLICT (player_id) DO NOTHING;
 
--- 6) Derive drives from play-by-play by starting a new drive when possession changes within a game.
 DROP TABLE IF EXISTS staging.play_drive_map;
 CREATE TABLE staging.play_drive_map AS
 WITH ordered AS (
@@ -397,7 +384,6 @@ SELECT DISTINCT ON (drive_id)
 FROM staging.play_drive_map
 ORDER BY drive_id, play_id;
 
--- 7) Plays.
 INSERT INTO plays (play_id, game_id, drive_id, play_sequence, quarter, time_remaining, down_number, yards_to_go, yardline_100, play_type, yards_gained, scoring_play, turnover_flag, possession_team_id, play_description)
 SELECT
     pdm.play_id,
@@ -418,7 +404,6 @@ SELECT
 FROM staging.stg_plays p
 JOIN staging.play_drive_map pdm ON pdm.play_id = p.playid::bigint;
 
--- 8) Play participants from passing, rushing, receiving, and tackles files.
 INSERT INTO playparticipants (play_id, player_id, role_type, team_side)
 SELECT DISTINCT play_id, player_id, role_type, team_side
 FROM (
@@ -434,7 +419,6 @@ WHERE EXISTS (SELECT 1 FROM plays p WHERE p.play_id = pp.play_id)
   AND EXISTS (SELECT 1 FROM players pl WHERE pl.player_id = pp.player_id)
 ON CONFLICT DO NOTHING;
 
--- 9) PlayerStats: aggregate real player-level event tables to one row per player per game/team.
 INSERT INTO playerstats (player_stat_id, game_id, player_id, team_id, passing_yards, rushing_yards, receiving_yards, touchdowns, interceptions, tackles)
 WITH stat_rows AS (
     SELECT pl.game_id, pa.playerid::int AS player_id, pa.teamid::int AS team_id,
@@ -482,7 +466,6 @@ WHERE EXISTS (SELECT 1 FROM games g WHERE g.game_id = grouped.game_id)
   AND EXISTS (SELECT 1 FROM players p WHERE p.player_id = grouped.player_id)
   AND EXISTS (SELECT 1 FROM teams t WHERE t.team_id = grouped.team_id);
 
--- 10) Penalties.
 INSERT INTO penalties (penalty_id, play_id, team_id, player_id, penalty_type, yards_penalized, automatic_first_down, declined_flag)
 SELECT
     NULLIF(penaltyid, '')::numeric::bigint,
@@ -499,7 +482,6 @@ WHERE NULLIF(penaltyid, '') IS NOT NULL
   AND EXISTS (SELECT 1 FROM plays p WHERE p.play_id = NULLIF(pen.playid, '')::numeric::bigint)
 ON CONFLICT (penalty_id) DO NOTHING;
 
--- Final row-count check for screenshots/report.
 SELECT 'seasons' AS table_name, COUNT(*) AS rows FROM seasons
 UNION ALL SELECT 'teams', COUNT(*) FROM teams
 UNION ALL SELECT 'stadiums', COUNT(*) FROM stadiums
