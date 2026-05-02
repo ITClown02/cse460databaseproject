@@ -5,11 +5,11 @@
 -- Dataset folder used here: C:/Users/frict/Desktop/New folder/Data
 -- If your folder changes, replace that path in the COPY commands.
 -- =========================================================
-
+-- added NULL::integer for compability fixes with postgres on mac
 SET client_encoding = 'UTF8';
 SET datestyle = 'ISO, MDY';
 
--- Start clean for repeatable demos
+-- Start over clean for demo
 TRUNCATE TABLE penalties, playerstats, playparticipants, plays, drives, players, games, stadiums, teams, seasons RESTART IDENTITY CASCADE;
 
 -- Recreate staging schema
@@ -36,7 +36,7 @@ CREATE TABLE staging.stg_games (
     "winningteam" TEXT
 );
 COPY staging.stg_games ("gameid", "season", "week", "gamedate", "gametimeeastern", "gametimelocal", "hometeamid", "visitorteamid", "seasontype", "weeknameabbr", "siteid", "hometeamdistance", "visitingteamdistance", "hometeamfinalscore", "visitingteamfinalscore", "winningteam")
-FROM 'C:/Users/frict/Desktop/New folder/Data/games.csv'
+FROM '/Users/ndog/Desktop/cse460databaseproject/Data/games.csv'
 WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
 
 DROP TABLE IF EXISTS staging.stg_plays;
@@ -87,7 +87,7 @@ CREATE TABLE staging.stg_plays (
     "formation" TEXT
 );
 COPY staging.stg_plays ("playid", "gameid", "playsequence", "quarter", "possessionteamid", "nonpossessionteamid", "playtype", "playtype2", "playtypedetailed", "playnumberbyteam", "gameclock", "gameclocksecondsexpired", "gameclockstoppedafterplay", "down", "distance", "fieldposition", "distancetogoalpre", "noplay", "playdescription", "playstats", "playdescriptionfull", "typeofplay", "changepossession", "turnover", "safety", "offensiveyards", "netyards", "firstdown", "efficientplay", "evpre", "evpost", "evplay", "fourthdownconversion", "thirddownconversion", "scorepossession", "scorenonpossession", "homescorepre", "visitingscorepre", "homescorepost", "visitingscorepost", "distancetogoalpost", "fieldgoalprobability", "huddle", "formation")
-FROM 'C:/Users/frict/Desktop/New folder/Data/plays.csv'
+FROM '/Users/ndog/Desktop/cse460databaseproject/Data/plays_short.csv'
 WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
 
 DROP TABLE IF EXISTS staging.stg_players;
@@ -115,7 +115,7 @@ CREATE TABLE staging.stg_players (
     "hscountry" TEXT
 );
 COPY staging.stg_players ("playerid", "namefirst", "namelast", "namefull", "position", "collegeid", "nflid", "combineid", "college", "heightinches", "weight", "dob", "ageatdraft", "playerprofileurl", "homecity", "homestate", "homecountry", "highschool", "hscity", "hsstate", "hscountry")
-FROM 'C:/Users/frict/Desktop/New folder/Data/players.csv'
+FROM '/Users/ndog/Desktop/cse460databaseproject/Data/players.csv'
 WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
 
 DROP TABLE IF EXISTS staging.stg_penalties;
@@ -130,7 +130,7 @@ CREATE TABLE staging.stg_penalties (
     "penaltyresult" TEXT
 );
 COPY staging.stg_penalties ("penaltyid", "playid", "teamid", "playerid", "penaltyposition", "penaltydescrip", "penaltyyds", "penaltyresult")
-FROM 'C:/Users/frict/Desktop/New folder/Data/penalties.csv'
+FROM '/Users/ndog/Desktop/cse460databaseproject/Data/penalties.csv'
 WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
 
 DROP TABLE IF EXISTS staging.stg_passer;
@@ -156,7 +156,7 @@ CREATE TABLE staging.stg_passer (
     "passnull" TEXT
 );
 COPY staging.stg_passer ("passid", "playid", "teamid", "playerid", "passposition", "passoutcomes", "passdirection", "passdepth", "passlength", "passatt", "passcomp", "passtd", "passint", "passinttd", "passsack", "passsackyds", "passhit", "passdef", "passnull")
-FROM 'C:/Users/frict/Desktop/New folder/Data/passer.csv'
+FROM '/Users/ndog/Desktop/cse460databaseproject/Data/passer.csv'
 WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
 
 DROP TABLE IF EXISTS staging.stg_rusher;
@@ -176,7 +176,7 @@ CREATE TABLE staging.stg_rusher (
     "rushnull" TEXT
 );
 COPY staging.stg_rusher ("rushid", "playid", "teamid", "playerid", "rushposition", "rushtype", "rushdirection", "rushlandmark", "rushyards", "rushprimary", "rushtd", "rushend", "rushnull")
-FROM 'C:/Users/frict/Desktop/New folder/Data/rusher.csv'
+FROM '/Users/ndog/Desktop/cse460databaseproject/Data/rusher.csv'
 WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
 
 DROP TABLE IF EXISTS staging.stg_receiver;
@@ -197,7 +197,7 @@ CREATE TABLE staging.stg_receiver (
     "recnull" TEXT
 );
 COPY staging.stg_receiver ("receiverid", "playid", "teamid", "playerid", "recposition", "recyards", "rec", "recyac", "rec1down", "recfumble", "recpassdef", "recpassint", "recend", "recnull")
-FROM 'C:/Users/frict/Desktop/New folder/Data/receiver.csv'
+FROM '/Users/ndog/Desktop/cse460databaseproject/Data/receiver.csv'
 WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
 
 DROP TABLE IF EXISTS staging.stg_gameparticipation;
@@ -230,7 +230,7 @@ CREATE TABLE staging.stg_gameparticipation (
     "hscountry" TEXT
 );
 COPY staging.stg_gameparticipation ("gamepartid", "gameid", "teamid", "playerid", "gamepartunit", "gamepartsnapcount", "namefirst", "namelast", "namefull", "position", "collegeid", "nflid", "combineid", "college", "heightinches", "weight", "dob", "ageatdraft", "playerprofileurl", "homecity", "homestate", "homecountry", "highschool", "hscity", "hsstate", "hscountry")
-FROM 'C:/Users/frict/Desktop/New folder/Data/gameParticipation.csv'
+FROM '/Users/ndog/Desktop/cse460databaseproject/Data/gamePartic_short.csv'
 WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
 
 DROP TABLE IF EXISTS staging.stg_tackles;
@@ -246,7 +246,7 @@ CREATE TABLE staging.stg_tackles (
     "tacklenull" TEXT
 );
 COPY staging.stg_tackles ("tackleid", "playid", "teamid", "playerid", "tackleposition", "tackletype", "tackleydsscrim", "tackleend", "tacklenull")
-FROM 'C:/Users/frict/Desktop/New folder/Data/tackles.csv'
+FROM '/Users/ndog/Desktop/cse460databaseproject/Data/tackles.csv'
 WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
 
 
@@ -270,7 +270,7 @@ GROUP BY season::int;
 
 -- 2) Teams: the real dataset mainly stores numeric team IDs. We create stable labels from those IDs.
 INSERT INTO teams (team_id, team_name, team_abbr, conference, division, founded_year)
-SELECT DISTINCT team_id, 'Team ' || team_id, 'T' || team_id, NULL, NULL, NULL
+SELECT DISTINCT team_id, 'Team ' || team_id, 'T' || team_id, NULL::text, NULL::text, NULL::integer
 FROM (
     SELECT NULLIF(hometeamid, '')::int AS team_id FROM staging.stg_games WHERE NULLIF(hometeamid, '') IS NOT NULL
     UNION
@@ -342,7 +342,7 @@ SELECT
     COALESCE(NULLIF(p.namefirst, ''), 'Unknown'),
     COALESCE(NULLIF(p.namelast, ''), 'Player'),
     NULLIF(p.position, ''),
-    NULL,
+    NULL::integer,
     NULLIF(p.dob, '')::date,
     NULLIF(p.college, '')
 FROM staging.stg_players p
@@ -352,7 +352,7 @@ ON CONFLICT (player_id) DO NOTHING;
 
 -- Add any referenced players missing from players.csv so foreign keys do not fail.
 INSERT INTO players (player_id, team_id, first_name, last_name, position, jersey_num, birth_date, college)
-SELECT DISTINCT player_id, team_id, 'Unknown', 'Player', NULL, NULL, NULL, NULL
+SELECT DISTINCT player_id, team_id, 'Unknown', 'Player', NULL::text, NULL::integer, NULL::date, NULL::text
 FROM (
     SELECT NULLIF(playerid, '')::int AS player_id, NULLIF(teamid, '')::int AS team_id FROM staging.stg_gameparticipation WHERE NULLIF(playerid, '') IS NOT NULL
     UNION

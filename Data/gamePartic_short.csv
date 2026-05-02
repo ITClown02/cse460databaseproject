@@ -1,0 +1,4 @@
+gamePartId,gameId,teamId,playerId,gamePartUnit,gamePartSnapCount,nameFirst,nameLast,nameFull,position,collegeId,nflId,combineId,college,heightInches,weight,dob,ageAtDraft,playerProfileUrl,homeCity,homeState,homeCountry,highSchool,hsCity,hsState,hsCountry
+12100001,56473,3800,20140091,offense,39,John,Brown,John Brown,WR,66762.0,2543847,18301.0,Pittsburg State (KS),71.0,179.0,1990-04-03,24.112328767123287,http://www.nfl.com/player/JohnBrown/2543847/profile,Homestead,FL,USA,Homestead HS,,FL,USA
+12100002,56473,3800,20100645,offense,33,John,Estes,John Estes,C,96813.0,2507981,,Hawaii,74.0,293.0,1987-03-25,23.09315068493151,http://www.nfl.com/player/JohnEstes/2507981/profile,Stockton,CA,USA,St. Mary's HS,Stockton,CA,USA
+12100003,56473,3800,20120112,offense,30,Bobby,Massie,Bobby Massie,OT,38677.0,2533543,17840.0,Mississippi,78.0,317.0,1989-08-01,22.75068493150685,http://www.nfl.com/player/BobbyMassie/2533543/profile,Lynchburg,VA,USA,Hargrave Military Academy,Chatham,VA,USA
