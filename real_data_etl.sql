@@ -1,0 +1,532 @@
+-- =========================================================
+-- real_data_etl.sql
+-- Loads the real NFL CSV dataset into the 10-table project schema.
+-- Assumption: run create.sql first, then run this file in pgAdmin.
+-- Dataset folder used here: C:/Users/frict/Desktop/New folder/Data
+-- If your folder changes, replace that path in the COPY commands.
+-- =========================================================
+
+SET client_encoding = 'UTF8';
+SET datestyle = 'ISO, MDY';
+
+-- Start clean for repeatable demos
+TRUNCATE TABLE penalties, playerstats, playparticipants, plays, drives, players, games, stadiums, teams, seasons RESTART IDENTITY CASCADE;
+
+-- Recreate staging schema
+DROP SCHEMA IF EXISTS staging CASCADE;
+CREATE SCHEMA staging;
+
+DROP TABLE IF EXISTS staging.stg_games;
+CREATE TABLE staging.stg_games (
+    "gameid" TEXT,
+    "season" TEXT,
+    "week" TEXT,
+    "gamedate" TEXT,
+    "gametimeeastern" TEXT,
+    "gametimelocal" TEXT,
+    "hometeamid" TEXT,
+    "visitorteamid" TEXT,
+    "seasontype" TEXT,
+    "weeknameabbr" TEXT,
+    "siteid" TEXT,
+    "hometeamdistance" TEXT,
+    "visitingteamdistance" TEXT,
+    "hometeamfinalscore" TEXT,
+    "visitingteamfinalscore" TEXT,
+    "winningteam" TEXT
+);
+COPY staging.stg_games ("gameid", "season", "week", "gamedate", "gametimeeastern", "gametimelocal", "hometeamid", "visitorteamid", "seasontype", "weeknameabbr", "siteid", "hometeamdistance", "visitingteamdistance", "hometeamfinalscore", "visitingteamfinalscore", "winningteam")
+FROM 'C:/Users/frict/Desktop/New folder/Data/games.csv'
+WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
+
+DROP TABLE IF EXISTS staging.stg_plays;
+CREATE TABLE staging.stg_plays (
+    "playid" TEXT,
+    "gameid" TEXT,
+    "playsequence" TEXT,
+    "quarter" TEXT,
+    "possessionteamid" TEXT,
+    "nonpossessionteamid" TEXT,
+    "playtype" TEXT,
+    "playtype2" TEXT,
+    "playtypedetailed" TEXT,
+    "playnumberbyteam" TEXT,
+    "gameclock" TEXT,
+    "gameclocksecondsexpired" TEXT,
+    "gameclockstoppedafterplay" TEXT,
+    "down" TEXT,
+    "distance" TEXT,
+    "fieldposition" TEXT,
+    "distancetogoalpre" TEXT,
+    "noplay" TEXT,
+    "playdescription" TEXT,
+    "playstats" TEXT,
+    "playdescriptionfull" TEXT,
+    "typeofplay" TEXT,
+    "changepossession" TEXT,
+    "turnover" TEXT,
+    "safety" TEXT,
+    "offensiveyards" TEXT,
+    "netyards" TEXT,
+    "firstdown" TEXT,
+    "efficientplay" TEXT,
+    "evpre" TEXT,
+    "evpost" TEXT,
+    "evplay" TEXT,
+    "fourthdownconversion" TEXT,
+    "thirddownconversion" TEXT,
+    "scorepossession" TEXT,
+    "scorenonpossession" TEXT,
+    "homescorepre" TEXT,
+    "visitingscorepre" TEXT,
+    "homescorepost" TEXT,
+    "visitingscorepost" TEXT,
+    "distancetogoalpost" TEXT,
+    "fieldgoalprobability" TEXT,
+    "huddle" TEXT,
+    "formation" TEXT
+);
+COPY staging.stg_plays ("playid", "gameid", "playsequence", "quarter", "possessionteamid", "nonpossessionteamid", "playtype", "playtype2", "playtypedetailed", "playnumberbyteam", "gameclock", "gameclocksecondsexpired", "gameclockstoppedafterplay", "down", "distance", "fieldposition", "distancetogoalpre", "noplay", "playdescription", "playstats", "playdescriptionfull", "typeofplay", "changepossession", "turnover", "safety", "offensiveyards", "netyards", "firstdown", "efficientplay", "evpre", "evpost", "evplay", "fourthdownconversion", "thirddownconversion", "scorepossession", "scorenonpossession", "homescorepre", "visitingscorepre", "homescorepost", "visitingscorepost", "distancetogoalpost", "fieldgoalprobability", "huddle", "formation")
+FROM 'C:/Users/frict/Desktop/New folder/Data/plays.csv'
+WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
+
+DROP TABLE IF EXISTS staging.stg_players;
+CREATE TABLE staging.stg_players (
+    "playerid" TEXT,
+    "namefirst" TEXT,
+    "namelast" TEXT,
+    "namefull" TEXT,
+    "position" TEXT,
+    "collegeid" TEXT,
+    "nflid" TEXT,
+    "combineid" TEXT,
+    "college" TEXT,
+    "heightinches" TEXT,
+    "weight" TEXT,
+    "dob" TEXT,
+    "ageatdraft" TEXT,
+    "playerprofileurl" TEXT,
+    "homecity" TEXT,
+    "homestate" TEXT,
+    "homecountry" TEXT,
+    "highschool" TEXT,
+    "hscity" TEXT,
+    "hsstate" TEXT,
+    "hscountry" TEXT
+);
+COPY staging.stg_players ("playerid", "namefirst", "namelast", "namefull", "position", "collegeid", "nflid", "combineid", "college", "heightinches", "weight", "dob", "ageatdraft", "playerprofileurl", "homecity", "homestate", "homecountry", "highschool", "hscity", "hsstate", "hscountry")
+FROM 'C:/Users/frict/Desktop/New folder/Data/players.csv'
+WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
+
+DROP TABLE IF EXISTS staging.stg_penalties;
+CREATE TABLE staging.stg_penalties (
+    "penaltyid" TEXT,
+    "playid" TEXT,
+    "teamid" TEXT,
+    "playerid" TEXT,
+    "penaltyposition" TEXT,
+    "penaltydescrip" TEXT,
+    "penaltyyds" TEXT,
+    "penaltyresult" TEXT
+);
+COPY staging.stg_penalties ("penaltyid", "playid", "teamid", "playerid", "penaltyposition", "penaltydescrip", "penaltyyds", "penaltyresult")
+FROM 'C:/Users/frict/Desktop/New folder/Data/penalties.csv'
+WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
+
+DROP TABLE IF EXISTS staging.stg_passer;
+CREATE TABLE staging.stg_passer (
+    "passid" TEXT,
+    "playid" TEXT,
+    "teamid" TEXT,
+    "playerid" TEXT,
+    "passposition" TEXT,
+    "passoutcomes" TEXT,
+    "passdirection" TEXT,
+    "passdepth" TEXT,
+    "passlength" TEXT,
+    "passatt" TEXT,
+    "passcomp" TEXT,
+    "passtd" TEXT,
+    "passint" TEXT,
+    "passinttd" TEXT,
+    "passsack" TEXT,
+    "passsackyds" TEXT,
+    "passhit" TEXT,
+    "passdef" TEXT,
+    "passnull" TEXT
+);
+COPY staging.stg_passer ("passid", "playid", "teamid", "playerid", "passposition", "passoutcomes", "passdirection", "passdepth", "passlength", "passatt", "passcomp", "passtd", "passint", "passinttd", "passsack", "passsackyds", "passhit", "passdef", "passnull")
+FROM 'C:/Users/frict/Desktop/New folder/Data/passer.csv'
+WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
+
+DROP TABLE IF EXISTS staging.stg_rusher;
+CREATE TABLE staging.stg_rusher (
+    "rushid" TEXT,
+    "playid" TEXT,
+    "teamid" TEXT,
+    "playerid" TEXT,
+    "rushposition" TEXT,
+    "rushtype" TEXT,
+    "rushdirection" TEXT,
+    "rushlandmark" TEXT,
+    "rushyards" TEXT,
+    "rushprimary" TEXT,
+    "rushtd" TEXT,
+    "rushend" TEXT,
+    "rushnull" TEXT
+);
+COPY staging.stg_rusher ("rushid", "playid", "teamid", "playerid", "rushposition", "rushtype", "rushdirection", "rushlandmark", "rushyards", "rushprimary", "rushtd", "rushend", "rushnull")
+FROM 'C:/Users/frict/Desktop/New folder/Data/rusher.csv'
+WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
+
+DROP TABLE IF EXISTS staging.stg_receiver;
+CREATE TABLE staging.stg_receiver (
+    "receiverid" TEXT,
+    "playid" TEXT,
+    "teamid" TEXT,
+    "playerid" TEXT,
+    "recposition" TEXT,
+    "recyards" TEXT,
+    "rec" TEXT,
+    "recyac" TEXT,
+    "rec1down" TEXT,
+    "recfumble" TEXT,
+    "recpassdef" TEXT,
+    "recpassint" TEXT,
+    "recend" TEXT,
+    "recnull" TEXT
+);
+COPY staging.stg_receiver ("receiverid", "playid", "teamid", "playerid", "recposition", "recyards", "rec", "recyac", "rec1down", "recfumble", "recpassdef", "recpassint", "recend", "recnull")
+FROM 'C:/Users/frict/Desktop/New folder/Data/receiver.csv'
+WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
+
+DROP TABLE IF EXISTS staging.stg_gameparticipation;
+CREATE TABLE staging.stg_gameparticipation (
+    "gamepartid" TEXT,
+    "gameid" TEXT,
+    "teamid" TEXT,
+    "playerid" TEXT,
+    "gamepartunit" TEXT,
+    "gamepartsnapcount" TEXT,
+    "namefirst" TEXT,
+    "namelast" TEXT,
+    "namefull" TEXT,
+    "position" TEXT,
+    "collegeid" TEXT,
+    "nflid" TEXT,
+    "combineid" TEXT,
+    "college" TEXT,
+    "heightinches" TEXT,
+    "weight" TEXT,
+    "dob" TEXT,
+    "ageatdraft" TEXT,
+    "playerprofileurl" TEXT,
+    "homecity" TEXT,
+    "homestate" TEXT,
+    "homecountry" TEXT,
+    "highschool" TEXT,
+    "hscity" TEXT,
+    "hsstate" TEXT,
+    "hscountry" TEXT
+);
+COPY staging.stg_gameparticipation ("gamepartid", "gameid", "teamid", "playerid", "gamepartunit", "gamepartsnapcount", "namefirst", "namelast", "namefull", "position", "collegeid", "nflid", "combineid", "college", "heightinches", "weight", "dob", "ageatdraft", "playerprofileurl", "homecity", "homestate", "homecountry", "highschool", "hscity", "hsstate", "hscountry")
+FROM 'C:/Users/frict/Desktop/New folder/Data/gameParticipation.csv'
+WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
+
+DROP TABLE IF EXISTS staging.stg_tackles;
+CREATE TABLE staging.stg_tackles (
+    "tackleid" TEXT,
+    "playid" TEXT,
+    "teamid" TEXT,
+    "playerid" TEXT,
+    "tackleposition" TEXT,
+    "tackletype" TEXT,
+    "tackleydsscrim" TEXT,
+    "tackleend" TEXT,
+    "tacklenull" TEXT
+);
+COPY staging.stg_tackles ("tackleid", "playid", "teamid", "playerid", "tackleposition", "tackletype", "tackleydsscrim", "tackleend", "tacklenull")
+FROM 'C:/Users/frict/Desktop/New folder/Data/tackles.csv'
+WITH (FORMAT csv, HEADER true, NULL '', QUOTE '"', ESCAPE '"');
+
+
+-- Helper pattern used below:
+-- NULLIF(col,'') avoids casting empty strings.
+
+-- 1) Seasons: one row per season year from games.csv.
+INSERT INTO seasons (season_id, season_year, season_type, start_date, end_date)
+SELECT
+    season::int AS season_id,
+    season::int AS season_year,
+    CASE
+        WHEN COUNT(DISTINCT NULLIF(seasontype, '')) = 1 THEN MAX(NULLIF(seasontype, ''))
+        ELSE 'Mixed'
+    END AS season_type,
+    MIN(NULLIF(gamedate, '')::date) AS start_date,
+    MAX(NULLIF(gamedate, '')::date) AS end_date
+FROM staging.stg_games
+WHERE NULLIF(season, '') IS NOT NULL
+GROUP BY season::int;
+
+-- 2) Teams: the real dataset mainly stores numeric team IDs. We create stable labels from those IDs.
+INSERT INTO teams (team_id, team_name, team_abbr, conference, division, founded_year)
+SELECT DISTINCT team_id, 'Team ' || team_id, 'T' || team_id, NULL, NULL, NULL
+FROM (
+    SELECT NULLIF(hometeamid, '')::int AS team_id FROM staging.stg_games WHERE NULLIF(hometeamid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(visitorteamid, '')::int FROM staging.stg_games WHERE NULLIF(visitorteamid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(possessionteamid, '')::int FROM staging.stg_plays WHERE NULLIF(possessionteamid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(nonpossessionteamid, '')::int FROM staging.stg_plays WHERE NULLIF(nonpossessionteamid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(teamid, '')::int FROM staging.stg_gameparticipation WHERE NULLIF(teamid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(teamid, '')::numeric::int FROM staging.stg_penalties WHERE NULLIF(teamid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(teamid, '')::int FROM staging.stg_passer WHERE NULLIF(teamid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(teamid, '')::int FROM staging.stg_rusher WHERE NULLIF(teamid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(teamid, '')::int FROM staging.stg_receiver WHERE NULLIF(teamid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(teamid, '')::int FROM staging.stg_tackles WHERE NULLIF(teamid, '') IS NOT NULL
+) t
+WHERE team_id IS NOT NULL;
+
+-- 3) Stadiums: games.csv provides siteId, so each siteId is treated as a stadium/location record.
+INSERT INTO stadiums (stadium_id, stadium_name, city, state, capacity, surface_type)
+SELECT DISTINCT
+    NULLIF(siteid, '')::int AS stadium_id,
+    'Site ' || NULLIF(siteid, '') AS stadium_name,
+    'Unknown' AS city,
+    'Unknown' AS state,
+    NULL::integer AS capacity,
+    'Unknown' AS surface_type
+FROM staging.stg_games
+WHERE NULLIF(siteid, '') IS NOT NULL;
+
+-- 4) Games.
+INSERT INTO games (game_id, season_id, game_date, week_number, home_team_id, away_team_id, stadium_id, home_score, away_score, overtime_flag)
+SELECT
+    gameid::int,
+    season::int,
+    NULLIF(gamedate, '')::date,
+    COALESCE(NULLIF(week, '')::int, 0),
+    NULLIF(hometeamid, '')::int,
+    NULLIF(visitorteamid, '')::int,
+    NULLIF(siteid, '')::int,
+    COALESCE(NULLIF(hometeamfinalscore, '')::int, 0),
+    COALESCE(NULLIF(visitingteamfinalscore, '')::int, 0),
+    FALSE
+FROM staging.stg_games
+WHERE NULLIF(gameid, '') IS NOT NULL
+  AND NULLIF(season, '') IS NOT NULL
+  AND NULLIF(gamedate, '') IS NOT NULL
+  AND NULLIF(hometeamid, '') IS NOT NULL
+  AND NULLIF(visitorteamid, '') IS NOT NULL;
+
+-- 5) Players: load real player profiles and infer a team from gameParticipation when available.
+WITH latest_team AS (
+    SELECT DISTINCT ON (NULLIF(playerid, '')::int)
+        NULLIF(playerid, '')::int AS player_id,
+        NULLIF(teamid, '')::int AS team_id
+    FROM staging.stg_gameparticipation
+    WHERE NULLIF(playerid, '') IS NOT NULL AND NULLIF(teamid, '') IS NOT NULL
+    ORDER BY NULLIF(playerid, '')::int, NULLIF(gameid, '')::int DESC
+)
+INSERT INTO players (player_id, team_id, first_name, last_name, position, jersey_num, birth_date, college)
+SELECT
+    p.playerid::int,
+    lt.team_id,
+    COALESCE(NULLIF(p.namefirst, ''), 'Unknown'),
+    COALESCE(NULLIF(p.namelast, ''), 'Player'),
+    NULLIF(p.position, ''),
+    NULL,
+    NULLIF(p.dob, '')::date,
+    NULLIF(p.college, '')
+FROM staging.stg_players p
+LEFT JOIN latest_team lt ON lt.player_id = p.playerid::int
+WHERE NULLIF(p.playerid, '') IS NOT NULL
+ON CONFLICT (player_id) DO NOTHING;
+
+-- Add any referenced players missing from players.csv so foreign keys do not fail.
+INSERT INTO players (player_id, team_id, first_name, last_name, position, jersey_num, birth_date, college)
+SELECT DISTINCT player_id, team_id, 'Unknown', 'Player', NULL, NULL, NULL, NULL
+FROM (
+    SELECT NULLIF(playerid, '')::int AS player_id, NULLIF(teamid, '')::int AS team_id FROM staging.stg_gameparticipation WHERE NULLIF(playerid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(playerid, '')::numeric::int, NULLIF(teamid, '')::numeric::int FROM staging.stg_penalties WHERE NULLIF(playerid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(playerid, '')::int, NULLIF(teamid, '')::int FROM staging.stg_passer WHERE NULLIF(playerid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(playerid, '')::int, NULLIF(teamid, '')::int FROM staging.stg_rusher WHERE NULLIF(playerid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(playerid, '')::int, NULLIF(teamid, '')::int FROM staging.stg_receiver WHERE NULLIF(playerid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(playerid, '')::int, NULLIF(teamid, '')::int FROM staging.stg_tackles WHERE NULLIF(playerid, '') IS NOT NULL
+) x
+WHERE player_id IS NOT NULL
+ON CONFLICT (player_id) DO NOTHING;
+
+-- 6) Derive drives from play-by-play by starting a new drive when possession changes within a game.
+DROP TABLE IF EXISTS staging.play_drive_map;
+CREATE TABLE staging.play_drive_map AS
+WITH ordered AS (
+    SELECT
+        p.*,
+        LAG(NULLIF(possessionteamid, '')::int) OVER (
+            PARTITION BY NULLIF(gameid, '')::int
+            ORDER BY NULLIF(playsequence, '')::int, NULLIF(playid, '')::bigint
+        ) AS prev_possession_team
+    FROM staging.stg_plays p
+    WHERE NULLIF(playid, '') IS NOT NULL
+      AND NULLIF(gameid, '') IS NOT NULL
+      AND NULLIF(possessionteamid, '') IS NOT NULL
+      AND EXISTS (SELECT 1 FROM games g WHERE g.game_id = NULLIF(p.gameid, '')::int)
+), marked AS (
+    SELECT
+        *,
+        CASE WHEN prev_possession_team IS NULL OR prev_possession_team <> NULLIF(possessionteamid, '')::int THEN 1 ELSE 0 END AS new_drive_flag
+    FROM ordered
+), numbered AS (
+    SELECT
+        *,
+        SUM(new_drive_flag) OVER (
+            PARTITION BY NULLIF(gameid, '')::int
+            ORDER BY NULLIF(playsequence, '')::int, NULLIF(playid, '')::bigint
+        ) AS drive_number_calc
+    FROM marked
+)
+SELECT
+    NULLIF(playid, '')::bigint AS play_id,
+    NULLIF(gameid, '')::int AS game_id,
+    drive_number_calc::int AS drive_number,
+    (NULLIF(gameid, '')::bigint * 10000 + drive_number_calc)::int AS drive_id,
+    NULLIF(possessionteamid, '')::int AS offense_team_id,
+    COALESCE(NULLIF(quarter, '')::int, 0) AS start_quarter,
+    NULLIF(gameclock, '') AS start_time_remaining,
+    COALESCE(NULLIF(distancetogoalpre, '')::numeric::int, NULL) AS start_yardline,
+    NULLIF(playtype, '') AS result
+FROM numbered;
+
+INSERT INTO drives (drive_id, game_id, drive_number, offense_team_id, start_quarter, start_time_remaining, start_yardline, result)
+SELECT DISTINCT ON (drive_id)
+    drive_id, game_id, drive_number, offense_team_id, start_quarter, start_time_remaining, start_yardline, result
+FROM staging.play_drive_map
+ORDER BY drive_id, play_id;
+
+-- 7) Plays.
+INSERT INTO plays (play_id, game_id, drive_id, play_sequence, quarter, time_remaining, down_number, yards_to_go, yardline_100, play_type, yards_gained, scoring_play, turnover_flag, possession_team_id, play_description)
+SELECT
+    pdm.play_id,
+    pdm.game_id,
+    pdm.drive_id,
+    COALESCE(NULLIF(p.playsequence, '')::int, 0),
+    COALESCE(NULLIF(p.quarter, '')::int, 0),
+    NULLIF(p.gameclock, ''),
+    NULLIF(p.down, '')::int,
+    NULLIF(p.distance, '')::int,
+    NULLIF(p.distancetogoalpre, '')::numeric::int,
+    LEFT(COALESCE(NULLIF(p.playtype, ''), 'unknown'), 30),
+    COALESCE(NULLIF(p.offensiveyards, '')::int, NULLIF(p.netyards, '')::int, 0),
+    COALESCE(NULLIF(p.scorepossession, '')::int, 0) <> 0 OR COALESCE(NULLIF(p.scorenonpossession, '')::int, 0) <> 0,
+    COALESCE(NULLIF(p.turnover, '')::int, 0) <> 0,
+    NULLIF(p.possessionteamid, '')::int,
+    LEFT(NULLIF(p.playdescription, ''), 500)
+FROM staging.stg_plays p
+JOIN staging.play_drive_map pdm ON pdm.play_id = p.playid::bigint;
+
+-- 8) Play participants from passing, rushing, receiving, and tackles files.
+INSERT INTO playparticipants (play_id, player_id, role_type, team_side)
+SELECT DISTINCT play_id, player_id, role_type, team_side
+FROM (
+    SELECT NULLIF(playid, '')::bigint AS play_id, NULLIF(playerid, '')::int AS player_id, 'passer'::varchar AS role_type, 'offense'::varchar AS team_side FROM staging.stg_passer WHERE NULLIF(playid, '') IS NOT NULL AND NULLIF(playerid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(playid, '')::bigint, NULLIF(playerid, '')::int, 'rusher', 'offense' FROM staging.stg_rusher WHERE NULLIF(playid, '') IS NOT NULL AND NULLIF(playerid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(playid, '')::bigint, NULLIF(playerid, '')::int, 'receiver', 'offense' FROM staging.stg_receiver WHERE NULLIF(playid, '') IS NOT NULL AND NULLIF(playerid, '') IS NOT NULL
+    UNION
+    SELECT NULLIF(playid, '')::bigint, NULLIF(playerid, '')::int, 'tackler', 'defense' FROM staging.stg_tackles WHERE NULLIF(playid, '') IS NOT NULL AND NULLIF(playerid, '') IS NOT NULL
+) pp
+WHERE EXISTS (SELECT 1 FROM plays p WHERE p.play_id = pp.play_id)
+  AND EXISTS (SELECT 1 FROM players pl WHERE pl.player_id = pp.player_id)
+ON CONFLICT DO NOTHING;
+
+-- 9) PlayerStats: aggregate real player-level event tables to one row per player per game/team.
+INSERT INTO playerstats (player_stat_id, game_id, player_id, team_id, passing_yards, rushing_yards, receiving_yards, touchdowns, interceptions, tackles)
+WITH stat_rows AS (
+    SELECT pl.game_id, pa.playerid::int AS player_id, pa.teamid::int AS team_id,
+           COALESCE(NULLIF(pa.passlength, '')::int, 0) AS passing_yards,
+           0 AS rushing_yards, 0 AS receiving_yards,
+           COALESCE(NULLIF(pa.passtd, '')::int, 0) AS touchdowns,
+           COALESCE(NULLIF(pa.passint, '')::int, 0) AS interceptions,
+           0 AS tackles
+    FROM staging.stg_passer pa JOIN plays pl ON pl.play_id = pa.playid::bigint
+    WHERE NULLIF(pa.playerid, '') IS NOT NULL AND NULLIF(pa.teamid, '') IS NOT NULL
+    UNION ALL
+    SELECT pl.game_id, ru.playerid::int, ru.teamid::int,
+           0, COALESCE(NULLIF(ru.rushyards, '')::int, 0), 0,
+           COALESCE(NULLIF(ru.rushtd, '')::int, 0), 0, 0
+    FROM staging.stg_rusher ru JOIN plays pl ON pl.play_id = ru.playid::bigint
+    WHERE NULLIF(ru.playerid, '') IS NOT NULL AND NULLIF(ru.teamid, '') IS NOT NULL
+    UNION ALL
+    SELECT pl.game_id, re.playerid::int, re.teamid::int,
+           0, 0, COALESCE(NULLIF(re.recyards, '')::int, 0),
+           0, 0, 0
+    FROM staging.stg_receiver re JOIN plays pl ON pl.play_id = re.playid::bigint
+    WHERE NULLIF(re.playerid, '') IS NOT NULL AND NULLIF(re.teamid, '') IS NOT NULL
+    UNION ALL
+    SELECT pl.game_id, ta.playerid::int, ta.teamid::int,
+           0, 0, 0, 0, 0, 1
+    FROM staging.stg_tackles ta JOIN plays pl ON pl.play_id = ta.playid::bigint
+    WHERE NULLIF(ta.playerid, '') IS NOT NULL AND NULLIF(ta.teamid, '') IS NOT NULL
+), grouped AS (
+    SELECT game_id, player_id, team_id,
+           SUM(passing_yards) AS passing_yards,
+           SUM(rushing_yards) AS rushing_yards,
+           SUM(receiving_yards) AS receiving_yards,
+           SUM(touchdowns) AS touchdowns,
+           SUM(interceptions) AS interceptions,
+           SUM(tackles) AS tackles
+    FROM stat_rows
+    GROUP BY game_id, player_id, team_id
+)
+SELECT
+    ROW_NUMBER() OVER (ORDER BY game_id, player_id, team_id)::bigint AS player_stat_id,
+    game_id, player_id, team_id,
+    passing_yards, rushing_yards, receiving_yards, touchdowns, interceptions, tackles
+FROM grouped
+WHERE EXISTS (SELECT 1 FROM games g WHERE g.game_id = grouped.game_id)
+  AND EXISTS (SELECT 1 FROM players p WHERE p.player_id = grouped.player_id)
+  AND EXISTS (SELECT 1 FROM teams t WHERE t.team_id = grouped.team_id);
+
+-- 10) Penalties.
+INSERT INTO penalties (penalty_id, play_id, team_id, player_id, penalty_type, yards_penalized, automatic_first_down, declined_flag)
+SELECT
+    NULLIF(penaltyid, '')::numeric::bigint,
+    NULLIF(playid, '')::numeric::bigint,
+    NULLIF(teamid, '')::numeric::int,
+    NULLIF(playerid, '')::numeric::int,
+    LEFT(COALESCE(NULLIF(penaltydescrip, ''), 'Unknown'), 100),
+    COALESCE(NULLIF(penaltyyds, '')::numeric::int, 0),
+    LOWER(COALESCE(penaltyresult, '')) LIKE '%first%',
+    LOWER(COALESCE(penaltyresult, '')) LIKE '%declin%'
+FROM staging.stg_penalties pen
+WHERE NULLIF(penaltyid, '') IS NOT NULL
+  AND NULLIF(playid, '') IS NOT NULL
+  AND EXISTS (SELECT 1 FROM plays p WHERE p.play_id = NULLIF(pen.playid, '')::numeric::bigint)
+ON CONFLICT (penalty_id) DO NOTHING;
+
+-- Final row-count check for screenshots/report.
+SELECT 'seasons' AS table_name, COUNT(*) AS rows FROM seasons
+UNION ALL SELECT 'teams', COUNT(*) FROM teams
+UNION ALL SELECT 'stadiums', COUNT(*) FROM stadiums
+UNION ALL SELECT 'games', COUNT(*) FROM games
+UNION ALL SELECT 'players', COUNT(*) FROM players
+UNION ALL SELECT 'drives', COUNT(*) FROM drives
+UNION ALL SELECT 'plays', COUNT(*) FROM plays
+UNION ALL SELECT 'playparticipants', COUNT(*) FROM playparticipants
+UNION ALL SELECT 'playerstats', COUNT(*) FROM playerstats
+UNION ALL SELECT 'penalties', COUNT(*) FROM penalties
+ORDER BY table_name;
